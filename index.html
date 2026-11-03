@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tú eres UNACEM Ecuador</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<div class="top">
+  <div class="eyebrow">Prototipo · Inducción de 90 días</div>
+  <h1>Tú eres UNACEM Ecuador</h1>
+  <p class="lead">Elige un rol para ver su app, o sigue un recorrido de principio a fin. Los botones del teléfono y de las pestañas funcionan. Todos los datos son de ejemplo.</p>
+</div>
+
+<div class="wrap">
+  <aside>
+    <div><h2>Ver como</h2><ul class="list roles" id="roles"></ul></div>
+    <div><h2>Recorridos</h2><ul class="list" id="tours"></ul></div>
+  </aside>
+  <div class="col">
+    <div class="crumb"><strong id="cTitle"></strong><span id="cRole"></span></div>
+    <div class="stagebox" id="stage"><div class="device ph" id="dev">
+
+    </div></div>
+    <div class="ctl" aria-live="polite">
+      <p id="cap"></p>
+      <div class="row">
+        <button class="btn" id="bBack">Atrás</button>
+        <button class="btn" id="bPrev">Paso anterior</button>
+        <button class="btn pri" id="bNext">Siguiente paso</button>
+        <span class="step" id="stepTxt"></span>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
