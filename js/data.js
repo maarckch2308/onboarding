@@ -44,6 +44,7 @@ window.PROTO = {
     "nuevo": [
       "Login",
       "Bienvenida",
+      "Rutas",
       "Perfil",
       "TuEquipo",
       "NuevoIngreso",
@@ -105,6 +106,7 @@ window.PROTO = {
   "names": {
     "Login": "Inicio de sesión",
     "Bienvenida": "Bienvenida",
+    "Rutas": "Ruta de inducción",
     "Perfil": "Completa tu perfil",
     "TuEquipo": "Tu equipo de acompañamiento",
     "NuevoIngreso": "Mi progreso",
@@ -200,7 +202,9 @@ window.PROTO = {
       "Ingresar": "Bienvenida"
     },
     "Bienvenida": {
-      "Comenzar": "Perfil",
+      
+      "Comenzar": "Rutas",
+      "Perfil": "Perfil",
       "Mi progreso": "NuevoIngreso",
       "Soporte": "SoporteHub",
       "Buddy": "TuEquipo",
