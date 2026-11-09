@@ -1,65 +1,153 @@
-/* Lógica del prototipo: carga screens/*.html, navegación por rol, recorridos y avisos. Datos en js/data.js */
+/* Prototipo "Tú eres UNACEM Ecuador": recorrido guiado primero, exploración libre después.
+   Datos en js/data.js · pantallas en screens/*.html */
 var D=window.PROTO;
 D.owner={};Object.keys(D.screens).forEach(function(r){D.screens[r].forEach(function(n){D.owner[n]=r})});
 D.tourList=D.tours.map(function(t){return[t.title,t.steps.map(function(s){return[s.screen,s.text]})]});
-var cur=null,tour=null,hist=[],tt;
+var cur=null,tour=null,parked=null,hist=[],tt,doneSet={};
 var $=function(i){return document.getElementById(i)};
-var dev=$("dev"),stage=$("stage");
+var dev=$("dev"),stage=$("stage"),area=$("area");
+try{doneSet=JSON.parse(sessionStorage.getItem("unacemDone")||"{}")}catch(e){}
+function saveDone(){try{sessionStorage.setItem("unacemDone",JSON.stringify(doneSet))}catch(e){}}
 function lab(el){return el.textContent.replace(/\s+/g," ").trim()}
 function toast(m){var t=$("toast");t.textContent=m;t.classList.add("on");clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on")},2600)}
 function roleLabel(r){for(var i=0;i<D.roles.length;i++)if(D.roles[i][0]===r)return D.roles[i][1]}
+function steps(){return D.tourList[tour.t][1]}
+
+/* Ajuste de tamaño: en celular el teléfono ocupa todo el ancho y se adapta al alto disponible */
 function fit(){
   var adm=D.owner[cur]==="admin";
-  dev.className="device "+(adm?"adm":"ph");
-  dev.style.transform="none";
-  var w=dev.offsetWidth,h=dev.offsetHeight;
-  var availW=stage.parentElement.clientWidth||w;
-  var availH=Math.max(460,window.innerHeight-280);
-  var s=Math.min(1,availW/w,availH/h);
-  dev.style.transform="scale("+s+")";
-  stage.style.width=Math.floor(w*s)+"px";stage.style.height=Math.floor(h*s)+"px";
+  var aw=area.clientWidth-24,ah=area.clientHeight-24;
+  var narrow=area.clientWidth<600;
+  var s;
+  old=$("hint");if(old)old.remove();
+  if(adm){
+    dev.className="device adm";dev.style.transform="none";
+    var w=1100,h=dev.offsetHeight;
+    s=Math.max(.6,Math.min(1,aw/w));
+    dev.style.transform="scale("+s+")";
+    stage.style.width=Math.round(w*s)+"px";stage.style.height=Math.round(h*s)+"px";
+    if(w*s>aw+1){var n=document.createElement("div");n.id="hint";n.className="note";n.textContent="Panel web · desliza para ver más";area.appendChild(n);}
+    return;
+  }
+  if(narrow){
+    s=Math.min(1.15,aw/390);
+    var sh=Math.max(700,Math.min(844,Math.floor(ah/s)));
+    dev.className="device ph narrow";dev.style.setProperty("--sh",sh+"px");
+    dev.style.transform="scale("+s+")";
+    stage.style.width=Math.round(390*s)+"px";stage.style.height=Math.round(sh*s)+"px";
+  }else{
+    dev.className="device ph";dev.style.setProperty("--sh","844px");dev.style.transform="none";
+    var w2=dev.offsetWidth,h2=dev.offsetHeight;
+    s=Math.min(1,aw/w2,ah/h2);
+    dev.style.transform="scale("+s+")";
+    stage.style.width=Math.round(w2*s)+"px";stage.style.height=Math.round(h2*s)+"px";
+  }
 }
+var old;
+
 function show(n,push){
   if(push&&cur)hist.push(cur);
   cur=n;
   var all=document.querySelectorAll(".scr");
   for(var i=0;i<all.length;i++)all[i].hidden=all[i].dataset.n!==n;
-  var sec=$("s-"+n);var sc=sec.querySelectorAll("*");
+  var sc=$("s-"+n).querySelectorAll("*");
   for(var j=0;j<sc.length;j++)if(sc[j].scrollTop)sc[j].scrollTop=0;
-  $("cTitle").textContent=D.names[n];
-  $("cRole").textContent=roleLabel(D.owner[n]);
-  paint();fit();
-  try{history.replaceState(null,"","#"+n.toLowerCase())}catch(e){}
+  area.scrollTop=0;area.scrollLeft=0;
+  $("done").hidden=true;
+  paint();fit();nudge();
+  try{history.replaceState(null,"","#"+(tour?"recorrido-"+(tour.t+1)+"-"+(tour.k+1):n.toLowerCase()))}catch(e){}
 }
+
+/* Resalta el botón que lleva al siguiente paso del recorrido */
+function target(){
+  if(!tour)return null;var st=steps();if(tour.k>=st.length-1)return null;
+  var next=st[tour.k+1][0];if(next===cur)return null;
+  var sec=$("s-"+cur);
+  var g=sec.querySelector('[data-go="'+next+'"]');if(g)return g;
+  var bs=sec.querySelectorAll("button"),rt=D.routes[cur]||{},tb=D.tabs[D.owner[cur]]||{};
+  for(var i=0;i<bs.length;i++){
+    var l=lab(bs[i]),inNav=bs[i].closest('[role="navigation"]');
+    var r=inNav?tb[l]:rt[l];if(Array.isArray(r))r=r[0];
+    if(r===next)return bs[i];
+  }
+  return null;
+}
+function nudge(){
+  var o=document.querySelectorAll(".nudge");for(var i=0;i<o.length;i++)o[i].classList.remove("nudge");
+  var t=target();if(t)t.classList.add("nudge");
+}
+
 function paint(){
-  var rb=document.querySelectorAll("#roles button");
-  for(var i=0;i<rb.length;i++)rb[i].setAttribute("aria-pressed",rb[i].dataset.r===D.owner[cur]?"true":"false");
+  var chips=document.querySelectorAll("#roles button");
+  for(var i=0;i<chips.length;i++)chips[i].setAttribute("aria-pressed",!tour&&chips[i].dataset.r===D.owner[cur]?"true":"false");
   var tb=document.querySelectorAll("#tours button");
-  for(var k=0;k<tb.length;k++)tb[k].setAttribute("aria-pressed",tour&&+tb[k].dataset.t===tour.t?"true":"false");
-  $("bBack").disabled=!hist.length;
-  var c=$("cap"),p=$("bPrev"),x=$("bNext"),st=$("stepTxt");
+  for(var k=0;k<tb.length;k++){
+    var on=tour&&+tb[k].dataset.t===tour.t;
+    if(on)tb[k].setAttribute("aria-current","true");else tb[k].removeAttribute("aria-current");
+    tb[k].classList.toggle("ok",!!doneSet[tb[k].dataset.t]);
+  }
+  $("pill").textContent=roleLabel(D.owner[cur]);
+  $("scrn").textContent=D.names[cur];
+  var sg=$("segs"),p=$("bPrev"),x=$("bNext"),c=$("cap");
   if(tour){
-    var steps=D.tourList[tour.t][1];
-    c.textContent=steps[tour.k][1];
-    p.hidden=false;x.hidden=false;p.disabled=tour.k===0;x.disabled=tour.k===steps.length-1;
-    st.textContent=D.tourList[tour.t][0]+" · paso "+(tour.k+1)+" de "+steps.length;
+    var st=steps(),last=tour.k===st.length-1;
+    $("ttl").textContent=D.tourList[tour.t][0];
+    $("cnt").textContent="Paso "+(tour.k+1)+" de "+st.length;
+    if(sg.children.length!==st.length){
+      sg.innerHTML="";
+      st.forEach(function(_,i){var b=document.createElement("button");b.setAttribute("aria-label","Ir al paso "+(i+1));b.innerHTML="<i></i>";b.onclick=function(){goStep(i)};sg.appendChild(b)});
+    }
+    for(var q=0;q<sg.children.length;q++)sg.children[q].className=q<tour.k?"on":q===tour.k?"cur":"";
+    c.textContent=st[tour.k][1];
+    p.textContent="← Anterior";p.disabled=tour.k===0;p.onclick=function(){goStep(tour.k-1)};
+    x.textContent=last?"Terminar ✓":"Siguiente →";x.disabled=false;x.onclick=last?finish:function(){goStep(tour.k+1)};
   }else{
-    c.textContent="Toca los botones y las pestañas del teléfono, o elige un recorrido a la izquierda.";
-    p.hidden=true;x.hidden=true;st.textContent="";
+    sg.innerHTML="";
+    $("ttl").textContent="Explorando por tu cuenta";$("cnt").textContent="";
+    c.innerHTML="Toca los botones y las pestañas del teléfono para moverte.<small>Usa «Atrás» para regresar o abre «Recorridos» para volver a la guía.</small>";
+    p.textContent="← Atrás";p.disabled=!hist.length;p.onclick=back;
+    if(parked){x.textContent="Volver al recorrido";x.onclick=function(){startTour(parked.t,parked.k)}}
+    else{x.textContent="Ver recorridos";x.onclick=function(){openMenu(true)}}
+    x.disabled=false;
   }
 }
+
+function goStep(k){
+  var st=steps();if(k<0||k>=st.length)return;
+  tour.k=k;show(st[k][0],false);
+}
+function startTour(t,k){
+  closeMenu();parked=null;tour={t:t,k:k||0};hist=[];
+  $("segs").innerHTML="";
+  show(D.tourList[t][1][tour.k][0],false);
+}
+function role(r){closeMenu();if(tour)parked={t:tour.t,k:tour.k};tour=null;hist=[];show(D.start[r],false)}
+function back(){if(!hist.length)return;var n=hist.pop();show(n,false)}
 function go(n,msg){
-  var j=-1;
-  if(tour){var steps=D.tourList[tour.t][1];
-    for(var i=Math.max(0,tour.k-1);i<steps.length;i++){if(steps[i][0]===n){j=i;break}}
-    if(j>=0)tour.k=j;else tour=null}
+  if(tour){
+    var st=steps(),j=-1;
+    for(var i=Math.max(0,tour.k-1);i<st.length;i++){if(st[i][0]===n){j=i;break}}
+    if(j>=0)tour.k=j;else{parked={t:tour.t,k:tour.k};tour=null}
+  }
   show(n,true);
   if(msg)toast(msg);
 }
-function startTour(t){tour={t:t,k:0};hist=[];show(D.tourList[t][1][0][0],false)}
-function role(r){tour=null;hist=[];show(D.start[r],false)}
-function back(){if(!hist.length)return;var n=hist.pop();tour=null;show(n,false)}
-function tourStep(d){if(!tour)return;var steps=D.tourList[tour.t][1];var k=tour.k+d;if(k<0||k>=steps.length)return;tour.k=k;show(steps[k][0],false)}
+function finish(){
+  doneSet[tour.t]=1;saveDone();paint();
+  var t=tour.t,nxt=t+1<D.tourList.length?t+1:null;
+  var d=$("done");
+  d.innerHTML='<div class="done-card"><h2>¡Terminaste!</h2><p>Completaste «'+D.tourList[t][0]+'».</p></div>';
+  var card=d.firstChild;
+  function add(txt,cls,fn){var b=document.createElement("button");b.className="btn "+cls;b.textContent=txt;b.onclick=fn;card.appendChild(b)}
+  if(nxt!==null)add("Siguiente recorrido: "+D.tourList[nxt][0],"pri",function(){startTour(nxt)});
+  add("Elegir otro recorrido",nxt===null?"pri":"",function(){d.hidden=true;openMenu(true)});
+  add("Explorar libremente por rol","ghost",function(){d.hidden=true;parked=null;tour=null;paint();openMenu(true)});
+  add("Repetir este recorrido","ghost",function(){startTour(t)});
+  d.hidden=false;
+}
+function openMenu(){$("menu").classList.add("open");$("bMenu").setAttribute("aria-expanded","true")}
+function closeMenu(){$("menu").classList.remove("open");$("bMenu").setAttribute("aria-expanded","false")}
+
 var SILENT={};D.silent.forEach(function(s){SILENT[s]=1});
 function press(e){
   var t=e.target;
@@ -68,7 +156,7 @@ function press(e){
   var b=t.closest("button");
   if(!b)return;
   var l=lab(b);
-  if(b.getAttribute("aria-label")==="Volver"){back();return}
+  if(b.getAttribute("aria-label")==="Volver"){if(hist.length)back();else toast("Esta es la primera pantalla de este recorrido.");return}
   if(b.closest('[role="navigation"]')){
     var tb=D.tabs[D.owner[cur]]||{};
     if(tb[l]){go(tb[l]);return}
@@ -89,7 +177,7 @@ function key(e){if(e.key==="Enter"||e.key===" "){var g=e.target.closest("[data-g
 function prefix(h,n){return h.replace(/ id="([^"]+)"/g,' id="'+n+'-$1"').replace(/ for="([^"]+)"/g,' for="'+n+'-$1"')}
 function load(){
   var names=Object.keys(D.owner);
-  $("cTitle").textContent="Cargando pantallas…";
+  $("ttl").textContent="Cargando pantallas…";
   return Promise.all(names.map(function(n){return fetch("screens/"+n+".html").then(function(r){if(!r.ok)throw new Error(n);return r.text()})})).then(function(list){
     var h="";
     list.forEach(function(t,i){var n=names[i];h+='<section class="scr '+(D.owner[n]==="admin"?"adm":"ph")+'" id="s-'+n+'" data-n="'+n+'" hidden>'+prefix(t,n)+"</section>"});
@@ -97,12 +185,9 @@ function load(){
   });
 }
 function init(){
-  var R=$("roles"),i;
-  D.roles.forEach(function(r){var li=document.createElement("li"),b=document.createElement("button");b.dataset.r=r[0];b.setAttribute("aria-pressed","false");b.textContent=r[1];b.onclick=function(){role(r[0])};li.appendChild(b);R.appendChild(li)});
-  var T=$("tours");
-  D.tourList.forEach(function(t,k){var li=document.createElement("li"),b=document.createElement("button");b.dataset.t=k;b.setAttribute("aria-pressed","false");b.innerHTML="<span></span><small>"+t[1].length+" pantallas</small>";b.firstChild.textContent=t[0];b.onclick=function(){startTour(k)};li.appendChild(b);T.appendChild(li)});
-  var adm=document.querySelectorAll(".scr.adm");
-  adm.forEach(function(sec){
+  D.roles.forEach(function(r){var b=document.createElement("button");b.dataset.r=r[0];b.setAttribute("aria-pressed","false");b.textContent=r[1];b.onclick=function(){role(r[0])};$("roles").appendChild(b)});
+  D.tourList.forEach(function(t,k){var li=document.createElement("li"),b=document.createElement("button");b.dataset.t=k;b.innerHTML='<span class="n"></span><span class="t"></span>';b.firstChild.textContent=k+1;b.lastChild.innerHTML="<span></span><small>"+t[1].length+" pantallas</small>";b.lastChild.firstChild.textContent=t[0];b.onclick=function(){startTour(k)};li.appendChild(b);$("tours").appendChild(li)});
+  document.querySelectorAll(".scr.adm").forEach(function(sec){
     sec.querySelectorAll("div").forEach(function(d){
       if(d.children.length===0&&D.side[lab(d)]&&d.parentElement.children.length>=6){d.dataset.go=D.side[lab(d)];d.setAttribute("role","button");d.tabIndex=0}
     });
@@ -118,12 +203,24 @@ function init(){
     });
   });
   dev.addEventListener("click",press);dev.addEventListener("keydown",key);
-  $("bBack").onclick=back;$("bPrev").onclick=function(){tourStep(-1)};$("bNext").onclick=function(){tourStep(1)};
-  document.addEventListener("keydown",function(e){if(e.target.closest&&e.target.closest("input,textarea"))return;if(e.key==="ArrowRight")tourStep(1);if(e.key==="ArrowLeft")tourStep(-1)});
+  $("bMenu").onclick=openMenu;$("mClose").onclick=closeMenu;$("scrim").onclick=closeMenu;
+  document.addEventListener("keydown",function(e){
+    if(e.key==="Escape"){closeMenu();return}
+    if(e.target.closest&&e.target.closest("input,textarea"))return;
+    if(tour&&e.key==="ArrowRight"&&tour.k<steps().length-1)goStep(tour.k+1);
+    if(tour&&e.key==="ArrowLeft"&&tour.k>0)goStep(tour.k-1);
+  });
   window.addEventListener("resize",fit);
   if(document.fonts&&document.fonts.ready)document.fonts.ready.then(fit);
-  var h=(location.hash||"").slice(1),start=D.start.nuevo;
-  Object.keys(D.owner).forEach(function(n){if(n.toLowerCase()===h)start=n});
-  show(start,false);
+  var h=(location.hash||"").slice(1),m;
+  if(m=h.match(/^recorrido-(\d+)(?:-(\d+))?$/)){
+    var t=+m[1]-1,k=m[2]?+m[2]-1:0;
+    if(D.tourList[t]&&D.tourList[t][1][k]){startTour(t,k);return}
+  }
+  if(m=h.match(/^rol-(\w+)$/)){if(D.start[m[1]]){role(m[1]);return}}
+  var free=null;Object.keys(D.owner).forEach(function(n){if(n.toLowerCase()===h)free=n});
+  if(free){show(free,false);return}
+  startTour(0,0);
+  toast("Usa «Siguiente» para avanzar. También puedes tocar los botones del teléfono.");
 }
-load().then(init).catch(function(e){$("cTitle").textContent="No se pudieron cargar las pantallas ("+e.message+"). Abre el prototipo desde un servidor, no con doble clic."});
+load().then(init).catch(function(e){$("ttl").textContent="No se pudieron cargar las pantallas ("+e.message+"). Ábrelo desde un servidor, no con doble clic."});
