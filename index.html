@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Tú eres UNACEM Ecuador</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,31 +10,33 @@
 <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-<div class="top">
-  <div class="eyebrow">Prototipo · Inducción de 90 días</div>
-  <h1>Tú eres UNACEM Ecuador</h1>
-  <p class="lead">Elige un rol para ver su app, o sigue un recorrido de principio a fin. Los botones del teléfono y de las pestañas funcionan. Todos los datos son de ejemplo.</p>
-</div>
-
-<div class="wrap">
-  <aside>
-    <div><h2>Ver como</h2><ul class="list roles" id="roles"></ul></div>
-    <div><h2>Recorridos</h2><ul class="list" id="tours"></ul></div>
-  </aside>
-  <div class="col">
-    <div class="crumb"><strong id="cTitle"></strong><span id="cRole"></span></div>
-    <div class="stagebox" id="stage"><div class="device ph" id="dev">
-
+<div class="app">
+  <div class="menu" id="menu" role="dialog" aria-label="Recorridos y roles">
+    <div class="scrim" id="scrim"></div>
+    <div class="sheet"><div class="sheet-in">
+      <div class="mhead"><div><b>Tú eres UNACEM Ecuador</b><span>Prototipo de la app de inducción · datos de ejemplo</span></div><button class="x" id="mClose" aria-label="Cerrar menú">✕</button></div>
+      <div><h3>Recorridos guiados</h3><ol class="list" id="tours"></ol></div>
+      <div><h3>Explorar por tu cuenta</h3><div class="chips" id="roles"></div></div>
     </div></div>
-    <div class="ctl" aria-live="polite">
-      <p id="cap"></p>
-      <div class="row">
-        <button class="btn" id="bBack">Atrás</button>
-        <button class="btn" id="bPrev">Paso anterior</button>
-        <button class="btn pri" id="bNext">Siguiente paso</button>
-        <span class="step" id="stepTxt"></span>
+  </div>
+  <div class="main">
+    <header class="bar">
+      <div class="bar-row">
+        <button class="menubtn" id="bMenu" aria-label="Abrir recorridos"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>Recorridos</button>
+        <div class="ttl" id="ttl"></div>
+        <div class="cnt" id="cnt"></div>
       </div>
+      <div class="segs" id="segs"></div>
+    </header>
+    <div class="stagearea" id="area">
+      <div class="stagebox" id="stage"><div class="device ph" id="dev"></div></div>
+      <div class="done" id="done" hidden></div>
     </div>
+    <footer class="dock"><div class="dock-in">
+      <div class="who"><span class="pill" id="pill"></span><span class="scrn" id="scrn"></span></div>
+      <p class="cap" id="cap" aria-live="polite"></p>
+      <div class="dockrow"><button class="btn" id="bPrev"></button><button class="btn pri" id="bNext"></button></div>
+    </div></footer>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>
