@@ -93,6 +93,7 @@ function paint(){
     var st=steps(),last=tour.k===st.length-1;
     $("ttl").textContent=D.tourList[tour.t][0];
     $("cnt").textContent="Paso "+(tour.k+1)+" de "+st.length;
+    if(sg.classList.contains("roles")){sg.classList.remove("roles");sg.innerHTML=""}
     if(sg.children.length!==st.length){
       sg.innerHTML="";
       st.forEach(function(_,i){var b=document.createElement("button");b.setAttribute("aria-label","Ir al paso "+(i+1));b.innerHTML="<i></i>";b.onclick=function(){goStep(i)};sg.appendChild(b)});
@@ -102,13 +103,14 @@ function paint(){
     p.textContent="← Anterior";p.disabled=tour.k===0;p.onclick=function(){goStep(tour.k-1)};
     x.textContent=last?"Terminar ✓":"Siguiente →";x.disabled=false;x.onclick=last?finish:function(){goStep(tour.k+1)};
   }else{
-    sg.innerHTML="";
-    $("ttl").textContent="Explorando por tu cuenta";$("cnt").textContent="";
-    c.innerHTML="Toca los botones y las pestañas del teléfono para moverte.<small>Usa «Atrás» para regresar o abre «Recorridos» para volver a la guía.</small>";
+    sg.innerHTML="";sg.classList.add("roles");
+    D.roles.forEach(function(r){var b=document.createElement("button");b.className="rc";b.textContent=r[1];b.setAttribute("aria-pressed",r[0]===D.owner[cur]?"true":"false");b.onclick=function(){role(r[0])};sg.appendChild(b)});
+    var cb=sg.querySelector('[aria-pressed="true"]');if(cb&&cb.scrollIntoView)cb.scrollIntoView({inline:"center",block:"nearest"});
+    $("ttl").textContent=D.names[cur];$("cnt").textContent="";
+    var n=D.screens[D.owner[cur]].length;
+    c.innerHTML="Toca los botones y pestañas del teléfono para moverte."+(n>1?"<small>"+n+" pantallas en este rol.</small>":"");
     p.textContent="← Atrás";p.disabled=!hist.length;p.onclick=back;
-    if(parked){x.textContent="Volver al recorrido";x.onclick=function(){startTour(parked.t,parked.k)}}
-    else{x.textContent="Ver recorridos";x.onclick=function(){openMenu(true)}}
-    x.disabled=false;
+    x.textContent="Cambiar de rol";x.onclick=picker;x.disabled=false;
   }
 }
 
@@ -121,7 +123,7 @@ function startTour(t,k){
   $("segs").innerHTML="";
   show(D.tourList[t][1][tour.k][0],false);
 }
-function role(r){closeMenu();if(tour)parked={t:tour.t,k:tour.k};tour=null;hist=[];show(D.start[r],false)}
+function role(r){closeMenu();$("done").hidden=true;if(tour)parked={t:tour.t,k:tour.k};tour=null;hist=[];show(D.start[r],false)}
 function back(){if(!hist.length)return;var n=hist.pop();show(n,false)}
 function go(n,msg){
   if(tour){
@@ -143,6 +145,14 @@ function finish(){
   add("Elegir otro recorrido",nxt===null?"pri":"",function(){d.hidden=true;openMenu(true)});
   add("Explorar libremente por rol","ghost",function(){d.hidden=true;parked=null;tour=null;paint();openMenu(true)});
   add("Repetir este recorrido","ghost",function(){startTour(t)});
+  d.hidden=false;
+}
+function picker(){
+  var d=$("done");
+  d.innerHTML='<div class="done-card"><h2>¿Quién eres?</h2><p>Elige un rol para ver la app como la vería esa persona.</p></div>';
+  var card=d.firstChild;
+  D.roles.forEach(function(r){var b=document.createElement("button");b.className="btn "+(r[0]==="nuevo"?"pri":"");b.textContent=r[1];b.onclick=function(){role(r[0])};card.appendChild(b)});
+  var g=document.createElement("button");g.className="btn ghost";g.textContent="Prefiero un recorrido guiado";g.onclick=function(){d.hidden=true;startTour(0,0)};card.appendChild(g);
   d.hidden=false;
 }
 function openMenu(){$("menu").classList.add("open");$("bMenu").setAttribute("aria-expanded","true")}
@@ -220,7 +230,6 @@ function init(){
   if(m=h.match(/^rol-(\w+)$/)){if(D.start[m[1]]){role(m[1]);return}}
   var free=null;Object.keys(D.owner).forEach(function(n){if(n.toLowerCase()===h)free=n});
   if(free){show(free,false);return}
-  startTour(0,0);
-  toast("Usa «Siguiente» para avanzar. También puedes tocar los botones del teléfono.");
+  role("nuevo");picker();
 }
 load().then(init).catch(function(e){$("ttl").textContent="No se pudieron cargar las pantallas ("+e.message+"). Ábrelo desde un servidor, no con doble clic."});
