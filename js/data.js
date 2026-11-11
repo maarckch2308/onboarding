@@ -210,6 +210,9 @@ window.PROTO = {
       "Buddy": "TuEquipo",
       "Puntaje": "Puntaje"
     },
+    "Rutas": {
+      "Comenzar": "Perfil"
+    },
     "Perfil": {
       "Guardar": "TuEquipo"
     },
