@@ -106,10 +106,10 @@ window.PROTO = {
   "names": {
     "Login": "Inicio de sesión",
     "Bienvenida": "Bienvenida",
-    "Rutas": "Mapa de la ruta",
+    "Rutas": "Mi ruta",
     "Perfil": "Completa tu perfil",
     "TuEquipo": "Tu equipo de acompañamiento",
-    "NuevoIngreso": "Mi ruta",
+    "NuevoIngreso": "Mi progreso",
     "Guia": "Guía para el éxito",
     "Cuestionario": "Cuestionario",
     "Cultura": "Cultura & Personas",
@@ -163,7 +163,8 @@ window.PROTO = {
   },
   "tabs": {
     "nuevo": {
-      "Mi ruta": "NuevoIngreso",
+      "Progreso": "NuevoIngreso",
+      "Ruta": "Rutas",
       "Actividades": "Actividades",
       "Premios": "Premios",
       "Mi equipo": "TuEquipo",
@@ -205,14 +206,14 @@ window.PROTO = {
       
       "Comenzar": "Rutas",
       "Perfil": "Perfil",
-      "Mi ruta": "NuevoIngreso",
+      "Mi progreso": "NuevoIngreso",
       "Soporte": "SoporteHub",
       "Buddy": "TuEquipo",
       "Puntaje": "Puntaje"
     },
     "Rutas": {
       "Comenzar": "Perfil",
-      "Mi ruta": "NuevoIngreso",
+      "Ruta": "Rutas",
       "Soporte": "SoporteHub",
       "Buddy": "TuEquipo",
       "Puntaje": "Puntaje"
